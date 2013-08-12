@@ -6,7 +6,7 @@ void main()
 	double a3[3] = {-3,-1,2};
 	double a4[3] = {-2,1,2};
 	double *a1[3] = {a2,a3,a4};
-	//111
+	//11
 	double b[3] = {8,-11,-3};
 	double *x;
 	x= (double *)calloc(3,sizeof(double));
