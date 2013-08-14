@@ -2,10 +2,8 @@
 #include "common.cpp"
 void main()
 {
-	int a[6] = {3,5,6,2,1,8};
-	sort_quick(a,0,5);
-	//sort_bub(a,6);
-	for(long i=0;i<6;i++)
-		printf("%d ",a[i]);
+	//double a[3][3] = {2,1,-1,-3,-1,2,-2,1,2};
+	//double *temp;
+	//get_col_vector(temp,(double**)a,0,3);
 	return;
 }
