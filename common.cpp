@@ -137,15 +137,18 @@ long gauss(double *x,double **a,double *b,long n)
 			if(fabs(a[j][i]) < SMLL)	continue;	 //如果元素为0，说明该方程少一个未知量，不影响
 			double mul = a[j][i] / a[i][i];		     //得到进行初等行变换的乘子
 			b[j] -= mul * b[i];						 //首先对相应的常量进行变换
-			add_mulrow(a,-mul,j,i,n);				 //对系数矩阵进行行变换
+			add_mulrow(a,-mul,j,i,n);				 //对系数矩阵进行初等行变换-两行相加，mul是乘子的意思
 		}
 	}
-	for(long i = n-1; i >=0; i--)
+	for(long i = n - 1; i >= 0; i--)				 //按行回带
 	{
-		
-	}
-
-
+		double dsum = 0;
+		for(long j = n - 1; j > i; j--)          //j要大于对角线的号
+		{
+			dsum += a[i][j] * x[j];				 //注意x的元素和a的元素列号相同 
+		}
+		x[i] = (b[i] - dsum) / a[i][i];
+	}  
 
 	return 0;
 }
@@ -164,7 +167,7 @@ long pos_max_row_index(double **a,long index,long n)
 	{
 		if(fabs(a[i][index]) > max_dtemp)
 		{
-			max_dtemp = a[i][index];
+			max_dtemp = fabs(a[i][index]);
 			max_index = i;
 		}
 	}
@@ -196,7 +199,7 @@ void swap_row(double **a,long i,long j,long n)
 //		n - 向量n的元素个数
 void swap_vector(double *a,long i,long j,long n)
 {
-	if(i = j)	return;
+	if(i == j)	return;
 	if(i > n || j > n)	
 	{
 		printf("\nError: - %s %d",__FILE__,__LINE__);
@@ -224,3 +227,4 @@ void add_mulrow(double **a,double mul,long i,long j,long n)
 
 	return;
 }
+

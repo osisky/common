@@ -24,4 +24,5 @@ void sort_quick(long *a,long low,long hight);
 void sort_bub(long *a,long n);
 void swap_row(double **a,long i,long j,long n);
 void swap_vector(double *a,long i,long j,long n);
+
 #endif
