@@ -14,15 +14,77 @@ Date: 2013-12-09
 /*********************************************************************************/
 
 #define SMLL    1.0E-10
+#define increase_stack 20
 /*********************************************************************************/
+
+//定义栈的结构
+typedef struct 
+{
+	double *top;
+	double *low;
+	long spacksize;
+
+}STACK;
+
+//定义队列每个节点的结构，注意队列用链表来表示，可以动态增加长度，不用插进去一个，就必须先出来一个。
+typedef struct qnode
+{
+	double data;
+	struct qnode *next;
+
+}*Qnode;
+
+//由于队列链表包含队头和队尾两个指针，所以用结构体表示
+typedef struct  
+{
+	Qnode qfront;
+	Qnode qback;
+}Linkqueue;
+
+/*********************************************************************************/
+//斐波那契数列
+long fib(int a);
+
+////功能：把j行的元素乘以mul加到i行
 void add_mulrow(double **a,double mul,long i,long j,long n);
+
+//功能：删除队头元素
+void delete_queue(Linkqueue *q,double *x);
+
+//功能：销毁队列
+void destory_queue(Linkqueue *q);
+
+//功能：折半查找，对已经排序过的数组进行查找
 long find_half(long *a,long len,long x);
-void get_col_vector(double *x,double **a,long index,long n);
+
+//功能：高斯消去法解线性方程组，该方法只能解方程数 = 未知数，也就是a为满秩矩阵
+long gauss(double *x,double **a,double *b,long n); 
+
+//功能：往队尾插入元素
+void insert_queue(Linkqueue *q, double x);
+
+//功能：初始化一个栈
+void init_stack(STACK *s,long stack_size);
+
+//功能：从矩阵a中，得到index列最大的数值的行号
 long pos_max_row_index(double **a,long index,long n);
+
+//功能：压栈
+void push_stack(STACK *s, double x);
+
+//功能：找到把数组a分成小和大两部分的键值的下标，例如-小数值 key 大数值。这时候小数值部分不一定是按小到大排序，它只是比key值小的部分
 long quick_sort_key(long *a,long low,long hight);
+
+//功能：快速排序-从小到大
 void sort_quick(long *a,long low,long hight);
+
+//功能：冒泡排序从小到大
 void sort_bub(long *a,long n);
+
+///功能：交换矩阵a的i行和j行，i和j为下标
 void swap_row(double **a,long i,long j,long n);
+
+//功能：交换向量i和j元素，
 void swap_vector(double *a,long i,long j,long n);
 
 #endif

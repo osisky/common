@@ -228,3 +228,132 @@ void add_mulrow(double **a,double mul,long i,long j,long n)
 	return;
 }
 
+//功能：初始化一个栈
+//参数：s - 栈
+//		stack_size - 栈的大小
+void init_stack(STACK *s,long stack_size)
+{
+	s->low = (double *)calloc(stack_size,sizeof(double));
+	if(s->low == NULL)
+	{
+		printf("\nError: - %s %d",__FILE__,__LINE__);
+		exit(0);
+	}
+	s->top = s->low;
+	s->spacksize = stack_size;
+	
+	return;
+}
+
+//功能：压栈
+//参数：s - 栈
+//		x - 被压入的数据
+void push_stack(STACK *s, double x)
+{
+	if((s->top - s->low) == s->spacksize)
+	{
+		s->low = (double *)realloc(s->low,(s->spacksize + increase_stack) * sizeof(double));
+		if(s->low == NULL)
+		{
+			printf("\nError: - %s %d",__FILE__,__LINE__);
+			exit(0);
+		}
+		s->top = s->low + increase_stack;
+		s->spacksize = s->spacksize + increase_stack;
+	}
+	*(s->top) = x;
+	s->top++;
+
+	return;
+}
+
+//功能：出栈
+//参数：s - 栈
+//		x - 出栈的元素
+void pop_stack(STACK *s, double *x)
+{
+	if(s->top == s->low)
+	{
+		printf("\nError: - %s %d",__FILE__,__LINE__);
+		exit(0);
+	}
+	s->top--;
+	*x = *(s->top);
+
+	return;
+}
+
+//功能：初始化一个队列
+//参数：q - 队列
+void init_queue(Linkqueue *q)
+{
+	q = (Linkqueue *)calloc(1,sizeof(Linkqueue));
+	if(q == NULL)
+	{
+		printf("\nError: - %s %d",__FILE__,__LINE__);
+		exit(0);
+	}
+	q->qfront = q->qback;
+	q->qfront->next = NULL;
+
+	return;
+}
+
+//功能：往队尾插入元素
+//参数：q - 队列
+//参数：x - 待插入元素
+void insert_queue(Linkqueue *q, double x)
+{
+	Qnode qtemp;
+	qtemp = (Qnode )calloc(1,sizeof(Qnode));
+	if(qtemp == NULL)
+	{
+		printf("\nError: - %s %d",__FILE__,__LINE__);
+		exit(0);
+	}
+	qtemp->data = x;
+	qtemp->next = NULL;
+	q->qback->next = qtemp;
+	q->qback = qtemp;
+
+	return;
+}
+//功能：删除队头元素
+//参数：q - 队列
+//		x - 删除的元素放在x中
+void delete_queue(Linkqueue *q,double *x)
+{
+	Qnode qtemp;
+	if(q->qback == q->qfront)
+		return;
+	qtemp = q->qfront->next;
+	*x = qtemp->data;
+	q->qfront->next = qtemp->next;
+	if(q->qback == qtemp)
+		q->qback = q->qfront;
+	free(qtemp);
+
+	return;
+}
+
+//功能：销毁队列
+//参数：q - 待销毁的队列
+void destory_queue(Linkqueue *q)
+{
+	while(q->qfront)
+	{
+		q->qback = q->qfront->next;
+		free(q->qfront);
+		q->qfront = q->qback;
+	}
+
+	return;
+}
+
+long fib(int a)
+{
+	if(a < 2)
+		return a==0 ? 0 : 1;
+	
+	return fib(a-1) + fib(a-2);
+}
