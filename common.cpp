@@ -181,11 +181,12 @@ long gauss(double *x,FSPAR *s,double *b,long n)
 		{
 			if(fabs(get_value_fspar(s,j,i)) < SMLL)	
 				continue;
-			double mul = diag / get_value_fspar(s,j,i);		//得到乘子mul
-			b[j] -= mul * b[j];								//对常量数组进行变换
+			double mul = get_value_fspar(s,j,i) / diag;		//得到乘子mul
+			b[j] -= mul * b[i];								//对常量数组进行变换
 			unfspar_row(ftemp,s,j,n);						//对稀疏矩阵的j行进行展开，补齐0，放到ftemp数组中
-			add_mulrow_fspar(s,ftemp,j,-mul);
+			add_mulrow_fspar(s,ftemp,i,-mul);
 			fsparfun(s,ftemp,j,n);							//对数组ftemp进行压缩，去掉0元素，并替换掉稀疏矩阵s的irow行
+
 		}	
 	}
 /************************************************************************************************************************
@@ -212,6 +213,7 @@ long gauss(double *x,FSPAR *s,double *b,long n)
 				sum += dsum * x[iindex];
 		}
 		x[i] = (b[i] - sum) / get_value_fspar(s,i,i);
+		b[i] = x[i];
 	}
 
 	return 0;
@@ -226,20 +228,21 @@ void fsparfun(FSPAR *s,double *v,long irow,long n)
 {	
 	long nmax = stat_nozero(v,n);		//统计v中的非0元个数
 	re_mem_fspar(s,irow,nmax);			//对s中的irow行重新分配空间
+	s[irow].n = 0;
 	for(long i = 0; i < n; i++)			//把v中的非0元素放到s的irow行
 	{
 		if(fabs(v[i]) > SMLL)
 		{
 			s[irow].n++;
-			s[irow].value[s[irow].n] = v[i];
-			s[irow].index[s[irow].n] = i;
+			s[irow].value[s[irow].n - 1] = v[i];
+			s[irow].index[s[irow].n - 1] = i;
 		}
 	}
 
 	return;
 }
 
-//功能：重新对稀疏矩阵的irow行进行分配空间，大小为n
+//功能：重新对稀疏矩阵的irow行进行分配空间，大小为n,用于替换irow行的时候调用
 //参数：s - 稀疏矩阵
 //		irow - 要重新分配的行
 //		nmax - 要分配的最大空间
@@ -262,6 +265,33 @@ void re_mem_fspar(FSPAR *s,long irow,long nmax)
 	return;
 }
 
+
+//功能：对稀疏矩阵s的irow行重新分配内存，大小为ceil10(s[i].n)，ceil10意思为大于或等于取整数，ceil(0到9) = 10 ceil(10到19) = 20;
+//		只要s[irow].n发生了改变，就要对irow重新分配内存;
+void re_mem_fspar(FSPAR *s,long irow)
+{
+	long nmax = ceil10(s[irow].n);					//ceil10意思为大于或等于取整数，ceil(0到9) = 10 ceil(10到19) = 20;
+	if(nmax != s[irow].nmax)
+	{
+		s[irow].index = (long *)realloc(s[irow].index,nmax * sizeof(long));			//重新分配空间
+		s[irow].value = (double *)realloc(s[irow].value,nmax * sizeof(double));
+		if(s[irow].index == NULL)
+		{
+			printf("\n Error: - %s %d",__FILE__,__LINE__);
+			exit(0);
+		}
+		if(s[irow].value == NULL)
+		{
+			printf("\n Error: - %s %d",__FILE__,__LINE__);
+			exit(0);
+		}
+		s[irow].nmax = nmax;														//重新定义最大空间
+	}
+
+	return;
+}
+
+
 //功能：统计长度为n的数组v中有多少个非0元素
 //参数：v - 待统计的数组
 //		n - 数组长度
@@ -270,7 +300,7 @@ long stat_nozero(double *v,long n)
 	long itemp = 0;
 	for(long i = 0; i < n; i++)
 	{
-		if(fabs(v[i]) < SMLL)
+		if(fabs(v[i]) > SMLL)
 			itemp++;
 	}
 
@@ -580,11 +610,137 @@ void makefspar(FSPAR *&s,long n)  //采用引用传递
 	}
 	for(long i = 0; i < n; i++)
 	{
-		s->index = NULL;		//初始化
-		s->value = NULL;
-		s->nmax = 0;
-		s->n = 0;
+		s[i].index = NULL;		//初始化
+		s[i].value = NULL;
+		s[i].nmax = 0;
+		s[i].n = 0;
 	}
 
+	return;
+}
+
+//功能：往稀疏矩阵的i行j列元素设置成x
+//参数：s - 稀疏矩阵
+//		x - 被设置的值
+//		i - 行下标
+//		j - 列下标
+void set_value_fspar(FSPAR *s,double x,long i,long j)
+{
+	if(fabs(x) < SMLL)				//如果对稀疏矩阵的元素置0，就相当于删除这个元素
+	{
+		dele_element_fspar(s,i,j);
+		return;
+	}
+	long vi = lookup(s,i,j);
+	if(vi == NO)				   //如果在原稀疏矩阵中没有该元素，则相当于新增元素
+	{
+		s[i].n++;
+		re_mem_fspar(s,i);         //每次新增元素得先判断数组长度够不够，减少元素，得判断元素个数减少后，个数的数量级是否变化，是个位数，还是十位数，如果数量级发生变化，得重新分配空间
+		s[i].value[s[i].n -1] = x; //注意这里得-1
+		s[i].index[s[i].n -1] = j;
+	}
+	else
+	{
+		s[i].value[vi] = x;
+	}
+
+	return;
+}
+
+//功能：删除稀疏矩阵s的一个元素,如果对稀疏矩阵的元素置0，就相当于把这个元素删除
+//参数：s - 稀疏矩阵
+//		irow - irow行下标
+//		icol - icol列下标
+void dele_element_fspar(FSPAR *s,long irow,long icol)
+{
+	long vi = lookup(s,irow,icol);                         //找到icol列在index中位置
+	if(vi == NO)
+	{
+		printf("\nError: - %s %d",__FILE__,__LINE__);
+		exit(0);
+	}
+	else
+	{
+		dele_ielement_vector(s[irow].index,vi,s[irow].n);	//删除vi下标的元素
+		dele_felement_vector(s[irow].value,vi,s[irow].n);	
+		s[irow].n--;										//长度-1
+		re_mem_fspar(s,irow);								//长度变化后，内存空间也要变化
+	}
+
+	return;
+}
+
+//功能：在长度为n的数组中删除index元素
+//参数：v - 数组
+//		index - 待删除元素的下标
+//		n - 数组长度
+void dele_felement_vector(double *v,long index,long n)
+{
+	for(long i = index; i < n - 1; i++)
+	{
+		v[index] = v[index + 1];
+	}
+
+	return;
+}
+
+void dele_ielement_vector(long *v,long index,long n)
+{
+	for(long i = index; i < n - 1; i++)
+	{
+		v[index] = v[index + 1];
+	}
+
+	return;
+}
+
+
+//功能：在稀疏矩阵s中查找irow行和icol列的元素在value的下标vi
+long lookup(FSPAR *s,long irow,long icol)
+{
+	long vi = NO;
+	for(long i = 0; i < s[irow].n; i++)
+	{
+		if(s[irow].index[i] == icol)
+			vi = i;
+	}
+	return vi;
+}
+
+//功能：在长度为n的数组中，找到数值为icol的元素下标
+long lookup(long *v,long icol,long n)
+{
+	long vi = NO;
+
+	for(long i = 0; i <n; i++)
+	{
+		if(v[i] == icol)
+			vi = i;
+	}
+	return vi;
+}
+
+//功能：把x加到稀疏矩阵s的irow行icol列
+//参数：s - 稀疏矩阵
+//		x - 待加值
+//		irow - 待加行下标
+//		icol - 待加列下标
+void add_value_fspar(FSPAR *s,double x,long irow,long icol)
+{
+	double dtemp = get_value_fspar(s,irow,icol);	
+	set_value_fspar(s,dtemp + x,irow,icol);
+
+	return;
+}
+void printfs(FSPAR *s)
+{
+	printf("\n");
+	for(long i = 0; i < 3; i++)
+	{
+		for(long j = 0; j < 3; j++)
+			printf("%lf ",s[i].value[j]);
+		printf("\n");
+
+	}
 	return;
 }
