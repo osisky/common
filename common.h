@@ -41,12 +41,25 @@ typedef struct
 	Qnode qback;
 }Linkqueue;
 
+//定义存储浮点型数据的稀疏矩阵，以顺序结构存储
+typedef struct
+{
+	double *value;
+	long *index;
+	long nmax;
+	long n;
+}FSPAR;
+
 /*********************************************************************************/
-//斐波那契数列
+//功能：斐波那契数列
 long fib(int a);
 
-////功能：把j行的元素乘以mul加到i行
+//功能：把j行的元素乘以mul加到i行
 void add_mulrow(double **a,double mul,long i,long j,long n);
+
+//功能：稀疏矩阵的irow行元素乘于mul后加到长度为n的数组v
+void add_mulrow_fspar(FSPAR *s,double *v,long irow,double mul);
+
 
 //功能：删除队头元素
 void delete_queue(Linkqueue *q,double *x);
@@ -57,8 +70,17 @@ void destory_queue(Linkqueue *q);
 //功能：折半查找，对已经排序过的数组进行查找
 long find_half(long *a,long len,long x);
 
-//功能：高斯消去法解线性方程组，该方法只能解方程数 = 未知数，也就是a为满秩矩阵
+//功能：对数组v进行压缩，去掉0元素，并替换掉稀疏矩阵s的irow行
+void fsparfun(FSPAR *s,double *v,long irow,long n);
+
+//功能：高斯消去法解线性方程组，该方法只能解方程数 = 未知数，也就是a为满秩矩阵，采用满矩阵形式
 long gauss(double *x,double **a,double *b,long n); 
+
+//功能：高斯消去法解线性方程组，该方法只能解方程数 = 未知数，也就是a为满秩矩阵，采用稀疏矩阵
+long gauss(double *x,FSPAR *s,double *b,long n);
+
+//功能：在稀疏矩阵s中得到i行j列元素
+double get_value_fspar(FSPAR *s,long i,long j);
 
 //功能：往队尾插入元素
 void insert_queue(Linkqueue *q, double x);
@@ -66,14 +88,24 @@ void insert_queue(Linkqueue *q, double x);
 //功能：初始化一个栈
 void init_stack(STACK *s,long stack_size);
 
+//功能：初始化数组v，长度为n
+void initfvector(double *v,long n);
+
 //功能：从矩阵a中，得到index列最大的数值的行号
-long pos_max_row_index(double **a,long index,long n);
+long pos_max_row(double **a,long index,long n);
+
+//功能：从稀疏矩阵中得到index列中最大元素的行号
+long pos_max_row_fspar(FSPAR *s,long index,long n);
 
 //功能：压栈
 void push_stack(STACK *s, double x);
 
 //功能：找到把数组a分成小和大两部分的键值的下标，例如-小数值 key 大数值。这时候小数值部分不一定是按小到大排序，它只是比key值小的部分
 long quick_sort_key(long *a,long low,long hight);
+
+//功能：重新对稀疏矩阵的irow行进行分配空间，大小为n
+void re_mem_fspar(FSPAR *s,long irow,long n);
+
 
 //功能：快速排序-从小到大
 void sort_quick(long *a,long low,long hight);
@@ -84,7 +116,12 @@ void sort_bub(long *a,long n);
 ///功能：交换矩阵a的i行和j行，i和j为下标
 void swap_row(double **a,long i,long j,long n);
 
+//功能：统计长度为n的数组v中有多少个非0元素
+long stat_nozero(double *v,long n);
+
 //功能：交换向量i和j元素，
 void swap_vector(double *a,long i,long j,long n);
 
+//功能：对稀疏矩阵S的irow行进行展开，补齐0，并放到v数组中
+void unfspar_row(double *v,FSPAR *s,long irow,long n);
 #endif
