@@ -18,10 +18,9 @@ void test_gauss()
 	return;
 }
 
-
-
-void main()
+void test_gauss_fspar()
 {
+
 	FSPAR * s = NULL;
 	makefspar(s,3);
 	set_value_fspar(s,2,0,0);
@@ -49,6 +48,19 @@ void main()
 		printf("\n\n%lf",x[i]);
 	}
 	
-	
+	free(s);
+	free(x);
+	return;
+}
+
+
+
+void main()
+{
+	double x[2] = {1,1};
+	newton_powerflow(x,2);
+	for(long i=0; i < 2; i++)
+		printf("\n%lf",x[i]);
+
 	return;
 }

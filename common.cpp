@@ -148,6 +148,7 @@ long gauss(double *x,double **a,double *b,long n)
 			dsum += a[i][j] * x[j];				 //注意x的元素和a的元素列号相同 
 		}
 		x[i] = (b[i] - dsum) / a[i][i];
+		b[i] = x[i];
 	}  
 
 	return 0;
@@ -267,7 +268,7 @@ void re_mem_fspar(FSPAR *s,long irow,long nmax)
 
 
 //功能：对稀疏矩阵s的irow行重新分配内存，大小为ceil10(s[i].n)，ceil10意思为大于或等于取整数，ceil(0到9) = 10 ceil(10到19) = 20;
-//		只要s[irow].n发生了改变，就要对irow重新分配内存;
+//		只要s[irow].n发生了改变，就检查空间是否足够，不够的话对irow重新分配内存;
 void re_mem_fspar(FSPAR *s,long irow)
 {
 	long nmax = ceil10(s[irow].n);					//ceil10意思为大于或等于取整数，ceil(0到9) = 10 ceil(10到19) = 20;
@@ -354,7 +355,7 @@ void add_mulrow_fspar(FSPAR *s,double *v,long irow,double mul)
 	return;
 }
 
-//功能：从矩阵a中，得到index列最大的数值的行号
+//功能：从矩阵a中，得到index列从对角线元素开始后的最大的数值的行号,
 //返回：-1为错误；最大的数的下标,
 //参数：a - 待查找矩阵
 //		n - 数组长度
@@ -392,6 +393,23 @@ long pos_max_row_fspar(FSPAR *s,long index,long n)
 	}
 
 	return max_row;
+}
+//功能：从长度为n的数组中找到绝对值最大的数的下标
+//参数：x - 待查找数组
+//		n - 数组长度
+long pos_absmax_vector(double *x,long n)
+{
+	long index = 0;
+	double tempv = fabs(x[index]);
+	for(long i = 1; i < n; i++)
+	{
+		if(fabs(x[i]) > tempv)
+		{
+			index = i;
+		}
+	}
+
+	return index;
 }
 
 //功能：在稀疏矩阵s中得到i行j列元素
@@ -494,7 +512,7 @@ void push_stack(STACK *s, double x)
 			printf("\nError: - %s %d",__FILE__,__LINE__);
 			exit(0);
 		}
-		s->top = s->low + increase_stack;
+		s->top = s->low + s->spacksize;
 		s->spacksize = s->spacksize + increase_stack;
 	}
 	*(s->top) = x;
@@ -744,3 +762,72 @@ void printfs(FSPAR *s)
 	}
 	return;
 }
+
+//功能：在目标串strdest中，查找源字符串strsrc是否在其中，类似strstr
+//返回：如果不存在则返回NULL，存在则返回出现的起始指针
+char *bf(char *strdest,char *strsrc)
+{
+	char *srcret = NULL;
+	long len_dest = strlen(strdest);
+	long len_src = strlen(strsrc);
+	if(!len_src)	return srcret;
+
+	for(long i = 0; i <= len_dest - len_src; i++)
+	{
+		long cur_len_src = 0;
+		char *strsrc_ = strsrc;
+		char *strdest_ = strdest + i;
+		char *curstrdest = strdest + i;
+		while(*strsrc_++ == *strdest_++)
+		{
+			cur_len_src++;
+			if(*strsrc_ == '\0' || *strsrc_ == '\0')
+				break;
+		}
+		if(cur_len_src == len_src)
+		{
+			srcret = curstrdest;
+			break;
+		}
+	}
+
+	return srcret;
+}
+
+void add_vector(double *x,double *y,long n)
+{
+	for(long i =0; i < n; i++)
+		x[i] += y[i];
+}
+
+void newton_powerflow(double *x,long n)
+{
+	FSPAR *J  = NULL;
+	makefspar(J,2);
+	double max_eps;
+	do 
+	{
+		double J11 = 4 * x[0];
+		double J12 = 1;
+		double J21 = 2 * x[0];
+		double J22 = 2 * x[1];
+		set_value_fspar(J,J11,0,0);
+		set_value_fspar(J,J12,0,1);
+		set_value_fspar(J,J21,1,0);
+		set_value_fspar(J,J22,1,1);
+		double *b = NULL;
+		b = (double *)calloc(2 ,sizeof(double));
+		double *y = NULL;
+		y = (double *)calloc(2 ,sizeof(double));
+		b[0] = 4 - 2 * x[0] * x[0] - x[1];
+		b[1] = 5 - x[0] * x[0] - x[1] * x[1];
+		gauss(y,J,b,n);
+		add_vector(x,y,n);
+		max_eps = y[pos_absmax_vector(y,n)];				
+	} 
+	while (max_eps > powerflow_eps);
+
+	return;
+}
+
+

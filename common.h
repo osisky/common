@@ -16,7 +16,7 @@ Date: 2013-12-09
 #define SMLL    1.0E-10
 #define increase_stack 20
 #define NO		-1
-
+#define powerflow_eps 0.00000001			//收敛精度	
 #define ceil10(n) ((n/10 + 1) * 10)
 /*********************************************************************************/
 
@@ -66,6 +66,9 @@ void add_mulrow_fspar(FSPAR *s,double *v,long irow,double mul);
 //功能：把x加到稀疏矩阵s的irow行icol列
 void add_value_fspar(FSPAR *s,double x,long irow,long icol);
 
+//功能：在目标串strdest中，查找源字符串strsrc是否在其中，类似strstr
+char *bf(char *strdest,char *strsrc);
+
 //功能：删除队头元素
 void delete_queue(Linkqueue *q,double *x);
 
@@ -109,11 +112,14 @@ long lookup(FSPAR *s,long irow,long icol);
 //功能：在长度为n的数组中，找到数值为icol的元素下标
 long lookup(long *v,long icol,long n);
 
-//功能：从矩阵a中，得到index列最大的数值的行号
+//功能：从矩阵a中，得到index列从对角线元素开始后的最大的数值的行号
 long pos_max_row(double **a,long index,long n);
 
 //功能：从稀疏矩阵中得到index列中最大元素的行号
 long pos_max_row_fspar(FSPAR *s,long index,long n);
+
+//功能：从长度为n的数组中找到绝对值最大的数的下标
+long pos_absmax_vector(double *x,long n);
 
 //功能：压栈
 void push_stack(STACK *s, double x);
@@ -150,5 +156,9 @@ void swap_vector(double *a,long i,long j,long n);
 //功能：对稀疏矩阵S的irow行进行展开，补齐0，并放到v数组中
 void unfspar_row(double *v,FSPAR *s,long irow,long n);
 
+/*********************************************************************************/
+//测试函数
+
 void printfs(FSPAR *s);
+
 #endif
